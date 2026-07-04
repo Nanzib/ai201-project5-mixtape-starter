@@ -84,3 +84,43 @@ def test_empty_playlist_returns_empty_list(app):
 
         songs = get_playlist_songs(playlist.id)
         assert songs == []
+
+
+def test_playlist_returns_all_songs_including_the_last_one(app):
+    """
+    Regression Test: Ensures get_playlist_songs returns every single song 
+    added to a playlist, specifically verifying that the final track is not truncated.
+    """
+    with app.app_context():
+        from services.playlist_service import create_playlist, get_playlist_songs
+        from models import User, Song, playlist_entries
+        from app import db
+        
+        user = User(username="regression_user", email="regression@test.com")
+        db.session.add(user)
+        db.session.commit()
+        
+        songs = []
+        for i in range(1, 4):
+            song = Song(title=f"Regression Track {i}", artist=f"Artist {i}", shared_by=user.id)
+            db.session.add(song)
+            songs.append(song)
+        db.session.commit()
+        
+        playlist = create_playlist(name="Regression Test Choice", created_by_user_id=user.id)
+        
+        for idx, song in enumerate(songs):
+            db.session.execute(
+                playlist_entries.insert().values(
+                    playlist_id=playlist.id,
+                    song_id=song.id,
+                    position=idx,
+                    added_by=user.id
+                )
+            )
+        db.session.commit()
+            
+        retrieved_songs = get_playlist_songs(playlist.id)
+        
+        assert len(retrieved_songs) == 3
+        assert retrieved_songs[-1]["id"] == songs[-1].id
