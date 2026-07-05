@@ -105,4 +105,8 @@ When a user listens to a song, the lifecycle flows through the platform layers a
 ---
 
 ## 🧪 Regression Test Reference
-I have implemented a dedicated automated regression test inside `tests/test_playlists.py` titled `test_playlist_returns_all_songs_including_the_last_one()`. This test sets up a playlist containing exactly 3 tracks and validates that the returned array matches that count. Under the original buggy implementation, the `[:-1]` slice would truncate the final track and cause this test to fail instantly, preventing future regressions.
+
+I have implemented an isolated, dedicated automated regression testing suite located within a new standalone file at `tests/test_regression.py`. This suite provides explicit documentation and guards against the regression of fixed boundary conditions:
+
+1. `test_playlist_returns_all_songs_including_the_last_one(app)`: This test sets up a 3-track playlist and verifies that the returned array matches the expected count. Under the original buggy implementation, the array slice would truncate the final track and cause this test to fail.
+2. `test_streak_increments_saturday_to_sunday(app)`: This test explicitly isolates the calendar boundary change between a Saturday and Sunday check-in. It ensures that the sequence increments an active user's listening streak to 2 rather than dropping into the erroneous fallback branch that reset it to 1.
